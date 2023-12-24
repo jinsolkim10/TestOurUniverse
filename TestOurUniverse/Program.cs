@@ -13,6 +13,16 @@ builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
 
 //추가한 서비스
+//builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+//        .AddEntityFrameworkStores<ApplicationDbContext>()
+//        .AddDefaultTokenProviders();
+
+//builder.Services.Configure<IdentityOptions>(options =>
+//{
+//    // Identity 설정들
+//});
+
+
 //builder.Services.AddDbContext<ApppDbContext>
 //    (options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 //builder.Services.AddAuthentication();
