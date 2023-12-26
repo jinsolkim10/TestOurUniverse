@@ -17,35 +17,24 @@ namespace TestOurUniverse.Services
     public class ClientService : IClientService
     {
         private readonly ApplicationDbContext applicationDbContext;
-        private readonly IConfiguration configuration;
-
-        public ClientService(ApplicationDbContext applicationDbContext, IConfiguration configuration)
+        private readonly IConfiguration config;
+        public ClientService(ApplicationDbContext applicationDbContext, IConfiguration config)
         {
             this.applicationDbContext = applicationDbContext;
-            this.configuration = configuration;
+            this.config = config;
         }
+
 
         public async Task<ServiceResponse> RegisterUserAsync(UserInfo model)
         {
             var userRole = new UserRole();
-            //admin이 이미 존재하는지 체크
+            //Check if admin already exist
             if (model.Email!.ToLower().StartsWith("admin"))
             {
                 var chkIfAdminExist = await applicationDbContext.UserRoles.Where(_ => _.RoleName!.ToLower().Equals("admin")).FirstOrDefaultAsync();
                 if (chkIfAdminExist != null) return new ServiceResponse() { Flag = false, Message = "Sorry Admin already exist, please change the email address" };
 
                 userRole.RoleName = "Admin";
-            }
-            else if (model.Email!.ToLower().StartsWith("creator"))
-            {
-                var chkIfEmployeeExist = await applicationDbContext.UserRoles
-                    .Where(_ => _.RoleName!.ToLower().Equals("creator"))
-                    .FirstOrDefaultAsync();
-
-                if (chkIfEmployeeExist != null)
-                    return new ServiceResponse() { Flag = false, Message = "Sorry Creator already exists, please change the email address" };
-
-                userRole.RoleName = "Creator";
             }
 
             var checkIfUserAlreadyCreated = await applicationDbContext.UserInfos.Where(_ => _.Email!.ToLower().Equals(model.Email!.ToLower())).FirstOrDefaultAsync();
@@ -64,7 +53,7 @@ namespace TestOurUniverse.Services
 
 
             if (string.IsNullOrEmpty(userRole.RoleName))
-                userRole.RoleName = "Customer";
+                userRole.RoleName = "User";
 
             userRole.UserId = registeredEntity.Id;
             applicationDbContext.UserRoles.Add(userRole);
@@ -72,7 +61,7 @@ namespace TestOurUniverse.Services
             return new ServiceResponse() { Flag = true, Message = "Account Created" };
         }
 
-        //패스워드 암호화
+        // Encrypt user password
         private static string HashPassword(string password)
         {
             byte[] salt = new byte[16];
@@ -98,10 +87,10 @@ namespace TestOurUniverse.Services
             var checkIfPasswordMatch = VerifyUserPassword(model.Password!, getUser.Password!);
             if (checkIfPasswordMatch)
             {
-                //롤 테이블에서 유저 정보 구하기
+                //get user role from the roles table
                 var getUserRole = await applicationDbContext.UserRoles.Where(_ => _.Id == getUser.Id).FirstOrDefaultAsync();
 
-                //역할과 이메일 주소를 사용자 이름으로 사용하여 토큰을 생성
+                //Generate token with the role, and username as email
                 var token = GenerateToken(getUser.Name, model.Email!, getUserRole!.RoleName!);
 
                 var checkIfTokenExist = await applicationDbContext.TokenInfos.Where(_ => _.UserId == getUser.Id).FirstOrDefaultAsync();
@@ -118,7 +107,7 @@ namespace TestOurUniverse.Services
             return new ServiceResponse() { Flag = false, Message = "Invalid email or password" };
         }
 
-        //사용자 데이터베이스 암호를 해독하고 사용자 원시 암호를 암호화한 후 비교
+        //Decrypt user database password and encrypt user raw password and compare
         private static bool VerifyUserPassword(string rawPassword, string databasePassword)
         {
             byte[] dbPasswordHash = Convert.FromBase64String(databasePassword);
@@ -136,7 +125,7 @@ namespace TestOurUniverse.Services
 
         private string GenerateToken(string name, string email, string roleName)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var userClaims = new[]
             {
@@ -145,8 +134,8 @@ namespace TestOurUniverse.Services
                 new Claim(ClaimTypes.Role, roleName)
             };
             var token = new JwtSecurityToken(
-                issuer: configuration["Jwt:Issuer"],
-                audience: configuration["Jwt:Audience"],
+                issuer: config["Jwt:Issuer"],
+                audience: config["Jwt:Audience"],
                 claims: userClaims,
                 expires: DateTime.Now.AddDays(1),
                 signingCredentials: credentials
