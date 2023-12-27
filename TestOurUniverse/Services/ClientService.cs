@@ -28,13 +28,24 @@ namespace TestOurUniverse.Services
         public async Task<ServiceResponse> RegisterUserAsync(UserInfo model)
         {
             var userRole = new UserRole();
-            //Check if admin already exist
+            //admin이 이미 존재하는지 체크
             if (model.Email!.ToLower().StartsWith("admin"))
             {
                 var chkIfAdminExist = await applicationDbContext.UserRoles.Where(_ => _.RoleName!.ToLower().Equals("admin")).FirstOrDefaultAsync();
                 if (chkIfAdminExist != null) return new ServiceResponse() { Flag = false, Message = "Sorry Admin already exist, please change the email address" };
 
                 userRole.RoleName = "Admin";
+            }
+            else if (model.Email!.ToLower().StartsWith("employee"))
+            {
+                var chkIfEmployeeExist = await applicationDbContext.UserRoles
+                    .Where(_ => _.RoleName!.ToLower().Equals("employee"))
+                    .FirstOrDefaultAsync();
+
+                if (chkIfEmployeeExist != null)
+                    return new ServiceResponse() { Flag = false, Message = "Sorry Employee already exists, please change the email address" };
+
+                userRole.RoleName = "Employee";
             }
 
             var checkIfUserAlreadyCreated = await applicationDbContext.UserInfos.Where(_ => _.Email!.ToLower().Equals(model.Email!.ToLower())).FirstOrDefaultAsync();
