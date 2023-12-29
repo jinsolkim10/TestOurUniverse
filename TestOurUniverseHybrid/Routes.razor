@@ -1,23 +1,23 @@
-﻿@* <Router AppAssembly="@typeof(MauiProgram).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Components.Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router> *@
-
-        @using Microsoft.AspNetCore.Components.Authorization
+﻿﻿@using Microsoft.AspNetCore.Components.Authorization
 @using TestOurUniverseHybrid.Components.Layout
 
-<Router AppAssembly="@typeof(MauiProgram).Assembly">
-    <Found Context="routeData">
-        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Components.Layout.MainLayout)">
-            <NotAuthorized>
-                <p>You are not authorized to access this resource.</p>
-            </NotAuthorized>
-            <Authorizing>
-                <p>Authorizing...</p>
-            </Authorizing>
-        </AuthorizeRouteView>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Routes).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    You are not authorized
+                </NotAuthorized>
+                <Authorizing>
+                    Please wait...
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
